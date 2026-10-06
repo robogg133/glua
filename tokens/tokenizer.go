@@ -58,6 +58,8 @@ func (t *Tokenizer) PeekChecked() (Token, error) {
 	return t.lookahead, t.err
 }
 
+func (t *Tokenizer) Filename() string { return t.filename }
+
 // Tokenize panics on invalid input. Use TokenizeChecked to handle lexical errors.
 func Tokenize(input string) []Token {
 	result, err := TokenizeChecked(input)
@@ -90,7 +92,7 @@ func (t *Tokenizer) readNext() (Token, error) {
 			l.Next()
 			continue
 		}
-		pos := [2]int{l.Line(), l.Col()}
+		pos := [2]uint32{l.Line(), l.Col()}
 		start := l.Index()
 		if ch == 0 {
 			return Token{Type: TkEos, Pos: pos}, nil

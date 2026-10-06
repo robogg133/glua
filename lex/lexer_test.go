@@ -65,7 +65,7 @@ func TestByteAccess(t *testing.T) {
 func TestNextPositions(t *testing.T) {
 	for _, tc := range []struct {
 		input string
-		lines int
+		lines uint32
 	}{
 		{"", 1}, {"x", 1}, {"\n", 2}, {"\r", 2}, {"\r\n", 2}, {"\n\r", 2},
 		{"\r\n\r", 3}, {"\n\r\n", 3}, {"\r\r", 3}, {"\n\n", 3},
@@ -74,7 +74,7 @@ func TestNextPositions(t *testing.T) {
 		l := NewLexer(tc.input)
 		for l.Next() != 0 {
 		}
-		wantCol := 1
+		wantCol := uint32(1)
 		if tc.input == "x" {
 			wantCol = 2
 		}

@@ -4,9 +4,9 @@ type TokenType uint8
 
 type Token struct {
 	Type  TokenType
-	Value string // Pode compartilhar a entrada; strings.Clone desvincula valores retidos.
-	Len   int    // Tamanho do trecho original em bytes, incluindo delimitadores.
-	Pos   [2]int // [linha, coluna em bytes], começando em 1.
+	Value string
+	Len   int
+	Pos   [2]uint32
 }
 
 const (

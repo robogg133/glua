@@ -17,12 +17,12 @@ func TestTokenizerStreaming(t *testing.T) {
 		t.Fatal("constructor read input")
 	}
 	want := []Token{
-		{TkLocal, "local", 5, [2]int{1, 1}},
-		{TkName, "x", 1, [2]int{1, 7}},
-		{TkAssign, "=", 1, [2]int{1, 8}},
-		{TkInt, "42", 2, [2]int{1, 9}},
-		{TkDots, "...", 3, [2]int{2, 1}},
-		{TkEos, "", 0, [2]int{2, 4}},
+		{TkLocal, "local", 5, [2]uint32{1, 1}},
+		{TkName, "x", 1, [2]uint32{1, 7}},
+		{TkAssign, "=", 1, [2]uint32{1, 8}},
+		{TkInt, "42", 2, [2]uint32{1, 9}},
+		{TkDots, "...", 3, [2]uint32{2, 1}},
+		{TkEos, "", 0, [2]uint32{2, 4}},
 	}
 	for _, expected := range want {
 		if got := stream.Peek(); got != expected {
@@ -160,7 +160,7 @@ func TestNumbers(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := Token{Type: tc.kind, Value: tc.input, Len: len(tc.input), Pos: [2]int{1, 1}}
+			want := Token{Type: tc.kind, Value: tc.input, Len: len(tc.input), Pos: [2]uint32{1, 1}}
 			if len(stream) != 2 || stream[0] != want || stream[1].Type != TkEos {
 				t.Fatalf("tokens = %#v, want %#v and EOF", stream, want)
 			}
@@ -175,12 +175,12 @@ func TestPositionsAndComments(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []Token{
-		{TkLocal, "local", 5, [2]int{1, 1}}, {TkName, "x", 1, [2]int{1, 7}},
-		{TkAssign, "=", 1, [2]int{1, 8}}, {TkInt, "42", 2, [2]int{1, 9}},
-		{TkBand, "&", 1, [2]int{2, 2}}, {TkBxor, "~", 1, [2]int{2, 3}},
-		{TkName, "x", 1, [2]int{2, 4}}, {TkShl, "<<", 2, [2]int{2, 5}},
-		{TkInt, "2", 1, [2]int{2, 7}}, {TkString, "á", 4, [2]int{4, 1}},
-		{TkEos, "", 0, [2]int{4, 5}},
+		{TkLocal, "local", 5, [2]uint32{1, 1}}, {TkName, "x", 1, [2]uint32{1, 7}},
+		{TkAssign, "=", 1, [2]uint32{1, 8}}, {TkInt, "42", 2, [2]uint32{1, 9}},
+		{TkBand, "&", 1, [2]uint32{2, 2}}, {TkBxor, "~", 1, [2]uint32{2, 3}},
+		{TkName, "x", 1, [2]uint32{2, 4}}, {TkShl, "<<", 2, [2]uint32{2, 5}},
+		{TkInt, "2", 1, [2]uint32{2, 7}}, {TkString, "á", 4, [2]uint32{4, 1}},
+		{TkEos, "", 0, [2]uint32{4, 5}},
 	}
 	if !reflect.DeepEqual(stream, want) {
 		t.Fatalf("got %#v\nwant %#v", stream, want)

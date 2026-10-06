@@ -3,7 +3,7 @@ package lex
 type Lexer struct {
 	input     string
 	idx       int
-	line, col int
+	line, col uint32
 	newline   byte
 }
 
@@ -49,5 +49,5 @@ func (l *Lexer) PeekByte(offset int) int { return int(l.PeekN(offset)) }
 func (l *Lexer) Slice(start, end int) string { return l.input[start:end] }
 func (l *Lexer) ByteIndex() int              { return l.idx }
 func (l *Lexer) Index() int                  { return l.idx }
-func (l *Lexer) Line() int                   { return l.line }
-func (l *Lexer) Col() int                    { return l.col }
+func (l *Lexer) Line() uint32                { return l.line }
+func (l *Lexer) Col() uint32                 { return l.col }
