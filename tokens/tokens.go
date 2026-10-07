@@ -74,6 +74,7 @@ const (
 	TkInt     // 42 | 0x2A
 	TkName    // i | _internal42
 	TkString  // "foo" | 'bar' | [[baz]] | [=[buzz]=]
+	TkGlobal  // global
 )
 
 func wordToTokenType(word string) TokenType {
@@ -96,6 +97,8 @@ func wordToTokenType(word string) TokenType {
 		return TkFor
 	case "function":
 		return TkFunction
+	case "global":
+		return TkGlobal
 	case "goto":
 		return TkGoto
 	case "if":
