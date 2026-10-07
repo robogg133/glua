@@ -1,7 +1,6 @@
 package bytecode
 
 type Bytecode uint32
-type OpCode uint8
 
 func (b Bytecode) Op() OpCode {
 	return OpCode(b) & 127
