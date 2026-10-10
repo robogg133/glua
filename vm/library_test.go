@@ -445,6 +445,21 @@ func TestLibrariesAllocationAndOverflowLimits(t *testing.T) {
 	libraryWant(t, r, []any{nil})
 }
 
+func TestLibrariesDeleteDuringIteration(t *testing.T) {
+	_, results, _ := libraryRun(t, `local t={10,20,30,a=40,b=50}
+ local count,sum=0,0
+ for k,v in pairs(t) do count=count+1;sum=sum+v;t[k]=nil end
+ local empty=next(t)==nil
+ for i=1,100 do t[i]=i end
+ local n=0;for k,v in pairs(t) do n=n+1;t[k]=nil end
+ t.same=1;t.same=nil;t.same=2
+ local key,value=next(t)
+ local done=next(t,key)==nil
+ local ok=pcall(next,t,"missing")
+ return count,sum,empty,n,key,value,done,ok`)
+	libraryWant(t, results, []any{int64(5), int64(150), true, int64(100), "same", int64(2), true, false})
+}
+
 func TestLibrariesPairsClosingAndStableIterator(t *testing.T) {
 	_, r, _ := libraryRun(t, `local original=next
  local normalCount=select("#",pairs({}))

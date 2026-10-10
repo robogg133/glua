@@ -25,11 +25,14 @@ func (e LuaError) Error() string { return luaString(e.Value) }
 
 type Table struct {
 	values    map[any]any
+	positions map[any]int
 	order     []any
 	Metatable *Table
 }
 
-func NewTable() *Table { return &Table{values: make(map[any]any)} }
+func NewTable() *Table {
+	return &Table{values: make(map[any]any), positions: make(map[any]int)}
+}
 func tableKey(key any) (any, bool) {
 	key = normalizeValue(key)
 	if key == nil {
@@ -48,6 +51,17 @@ func tableKey(key any) (any, bool) {
 	}
 	return key, true
 }
+
+// Get is raw host access; it does not invoke __index. The boolean distinguishes
+// a missing entry from false, zero or an empty string. Lua nil deletes an entry.
+func (t *Table) Get(key any) (any, bool) {
+	value := t.RawGet(key)
+	return value, value != nil
+}
+
+// Set is raw host access; it does not invoke __newindex. Nil removes an entry.
+func (t *Table) Set(key, value any) error { return t.RawSet(key, value) }
+
 func (t *Table) RawGet(key any) any {
 	key, ok := tableKey(key)
 	if !ok || t == nil {
@@ -68,17 +82,26 @@ func (t *Table) RawSet(key, value any) error {
 	}
 	value = normalizeValue(value)
 	if value == nil {
-		if _, exists := t.values[k]; exists {
-			delete(t.values, k)
-			for i, v := range t.order {
-				if v == k {
-					t.order = append(t.order[:i], t.order[i+1:]...)
-					break
+		// Retain the key's slot: next(t, key) must still work when the current
+		// entry is deleted during iteration. Rehash tombstones on insertion.
+		delete(t.values, k)
+	} else {
+		if t.positions == nil {
+			t.positions = make(map[any]int)
+		}
+		if _, live := t.values[k]; !live {
+			if previous, exists := t.positions[k]; exists {
+				t.order[previous] = nil
+				delete(t.positions, k)
+			}
+			if len(t.order) > max(64, 2*len(t.values)) {
+				live := t.Keys()
+				t.order, t.positions = live, make(map[any]int, len(live))
+				for index, key := range live {
+					t.positions[key] = index
 				}
 			}
-		}
-	} else {
-		if _, exists := t.values[k]; !exists {
+			t.positions[k] = len(t.order)
 			t.order = append(t.order, k)
 		}
 		t.values[k] = value
@@ -99,7 +122,33 @@ func (t *Table) Keys() []any {
 	if t == nil {
 		return nil
 	}
-	return append([]any(nil), t.order...)
+	keys := make([]any, 0, len(t.values))
+	for _, key := range t.order {
+		if _, exists := t.values[key]; exists {
+			keys = append(keys, key)
+		}
+	}
+	return keys
+}
+func (t *Table) next(key any) (any, any, error) {
+	start := 0
+	if key != nil {
+		canonical, valid := tableKey(key)
+		if !valid {
+			return nil, nil, valueError("invalid key to 'next'")
+		}
+		position, exists := t.positions[canonical]
+		if !exists {
+			return nil, nil, valueError("invalid key to 'next'")
+		}
+		start = position + 1
+	}
+	for _, key := range t.order[start:] {
+		if value, exists := t.values[key]; exists {
+			return key, value, nil
+		}
+	}
+	return nil, nil, nil
 }
 func truth(v any) bool { return v != nil && v != false }
 func typeName(v any) string {

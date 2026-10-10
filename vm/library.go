@@ -934,26 +934,14 @@ func libNext(_ *State, a []any) ([]any, error) {
 	if e != nil {
 		return nil, e
 	}
-	if len(t.values) > libMaxResults {
-		return nil, fmt.Errorf("next: key list exceeds 16 MiB limit")
+	key, value, e := t.next(libAt(a, 1))
+	if e != nil {
+		return nil, e
 	}
-	keys := t.Keys()
-	key := libAt(a, 1)
 	if key == nil {
-		if len(keys) == 0 {
-			return []any{nil}, nil
-		}
-		return []any{keys[0], t.RawGet(keys[0])}, nil
+		return []any{nil}, nil
 	}
-	for i, k := range keys {
-		if libEqual(key, k) {
-			if i+1 == len(keys) {
-				return []any{nil}, nil
-			}
-			return []any{keys[i+1], t.RawGet(keys[i+1])}, nil
-		}
-	}
-	return nil, fmt.Errorf("invalid key to 'next'")
+	return []any{key, value}, nil
 }
 
 func libMath() map[string]NativeFunction {

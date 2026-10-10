@@ -103,6 +103,11 @@ func (s *State) SetTop(index int) error {
 	}
 	return nil
 }
+
+// Environment returns the live global table, initializing a zero-value State
+// without changing its API stack. Access through the table is raw host access.
+func (s *State) Environment() *Table { s.ensureInit(); return s.Globals }
+
 func (s *State) GetGlobal(name string) error {
 	s.ensureInit()
 	v, err := s.get(s.Globals, name)

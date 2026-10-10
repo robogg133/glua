@@ -45,7 +45,7 @@ root-frame diagnostics, not the API stack.
 | `GetGlobal(name)` | Push a global through normal table access; return any access error. |
 | `SetGlobal(name)` | Assign the top entry through normal table access, popping it only on success. |
 | `Call(nargs, nresults)` | Consume a function followed by its arguments and push its results. |
-| `Invoke(fn, args...)` | Return all results directly; intended to preserve the caller's API stack. |
+| `Invoke(fn, args...)` | Return all results directly without changing the caller's API stack. |
 
 `Call` preserves entries below the function; on execution failure the function
 and arguments are removed. Fixed result counts truncate or pad with nil;
@@ -112,12 +112,23 @@ the reference Lua garbage collector.
 or general resource use. Native functions must enforce their own cancellation
 and resource limits. This is not a security sandbox.
 
-The regression suite currently records two core integration issues: native
-callbacks can mutate the caller's API stack (the intended contract is a temporary
-argument stack restored on return), and a cancelled context prevents `__close`
-callbacks during error unwinding. Until resolved, use native `args`/returned
-slices rather than scratch API stack operations, and do not rely on cancellation
-alone to release host resources.
+Native callbacks receive a temporary API stack containing their arguments;
+`Pop`/`SetTop` and nested calls cannot overwrite the caller's stack. Explicit
+returned slices determine their results. The caller's stack is restored on both
+success and failure.
+
+Cancellation and instruction-budget exhaustion still unwind `<close>` resources.
+Cleanup receives a separate allowance of 10,000 instructions with cancellation
+masked, so cleanup code cannot restart an unlimited Lua loop. Errors raised by
+`__close` replace the current Lua error while remaining resources are closed.
+Host callbacks still need their own resource and timing bounds.
+
+Tables retain deleted iteration slots so deleting the current key during `pairs`
+works. New-key insertions can compact those slots; as in Lua, inserting new keys
+while traversing a table is not supported. Table length currently scans the
+contiguous prefix, and Lua may choose a different valid border for tables with
+holes. String decimal formatting uses Go's formatting and is not guaranteed
+byte-identical to C in every numeric corner case.
 
 ## Tests
 
